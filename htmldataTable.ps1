@@ -1,5 +1,5 @@
 
-# Ehencing ConvertTo-html cmdlet with HTMLDataTable 
+# Enhancing ConvertTo-html cmdlet with HTMLDataTable 
 # using jquery and css from CDN but can be hosted locally . 
 # und3ath 04/07/2016
 
