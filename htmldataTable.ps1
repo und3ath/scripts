@@ -1,4 +1,9 @@
-﻿
+
+# Ehencing ConvertTo-html cmdlet with HTMLDataTable 
+# using jquery and css from CDN but can be hosted locally . 
+# und3ath 04/07/2016
+
+
 $htmlHead = @"
 <meta charset="UTF-8">
 
@@ -30,16 +35,17 @@ $preContent = @"
 
 
 
-
+# here pipe what u whant in the $htmlData in html format.
 $process = Get-Process
 $htmlData = $process | ConvertTo-Html -Head $htmlHead -PreContent $preContent  | Out-String
 
+
+
+
+# html magic's
 $htmlData = [regex]::Replace($htmlData, "<colgroup>.*", "")
-
 $property = [regex]::Match($htmlData, "<tr><th>.*")
-
 $htmlData = [regex]::Replace($htmlData, "<tr><th>.*", "")
-
 $property = $property -replace "<tr><th>", ""
 $property = $property -replace "</th></tr>", ""
 $propertyArray = $property -split "</th><th>"
@@ -50,15 +56,10 @@ foreach($props in $propertyArray)
     $propFormated += $p
 }
 $htmlData = $htmlData -replace "KLX", $propFormated
-
-
-
 $htmlData = $htmlData -replace "<table>" , ""
 $htmlData = $htmlData -replace "</table>", "</tbody></table>"
 $htmlData = $htmlData -replace "</body>", ""
 $htmlData = $htmlData -replace "<body>", ""
-
-
 
 
 $htmlData | Out-File c:\tmp.html
