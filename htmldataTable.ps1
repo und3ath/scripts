@@ -2,22 +2,57 @@
 # using jquery and css from CDN but can be hosted locally . 
 # und3ath 06/07/2016
 
-$htmlHead = @"
-<link rel="stylesheet" type="text/css" charset="utf8" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.0/css/jquery.dataTables.css">
-        <link rel="stylesheet" type="text/css" charset="utf8" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.0/css/jquery.dataTables_themeroller.css">
 
-        <script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.1.min.js"></script>
-        <script type="text/javascript" charset="utf8" src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.0/jquery.dataTables.min.js"></script>
+$jqueryUiTheme = @{
+"black-tie" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/black-tie/jquery-ui.css";
+"blitzer"   = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/blitzer/jquery-ui.css";
+"cupertino" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/cupertino/jquery-ui.css";
+"dark-hive" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/dark-hive/jquery-ui.css";
+"dot-luve"  = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/dot-luv/jquery-ui.css";
+"eggplant"  = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/eggplant/jquery-ui.css";
+"exit-bike" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/excite-bike/jquery-ui.css";
+"flick"     = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/flick/jquery-ui.css";
+"hot-sneak" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/hot-sneaks/jquery-ui.css";
+"hummanity" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/humanity/jquery-ui.css";
+"le-frog"   = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/le-frog/jquery-ui.css";
+"mint-choc" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/mint-choc/jquery-ui.css";
+"overcast"  = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/overcast/jquery-ui.css";
+"smoothness"= "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/smoothness/jquery-ui.css";
+"ui-darkness" = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/ui-darkness/jquery-ui.css";
+"vader"     = "https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/themes/vader/jquery-ui.css";
+
+}
+
+
+
+
+
+
+$htmlHead = @"
+        <link rel="stylesheet" type="text/css" charset="utf8" href="$($jqueryUiTheme["vader"])"> 
+        <link rel="stylesheet" type="text/css" charset="utf8" href="https://cdn.datatables.net/1.10.12/css/dataTables.jqueryui.css"> 
+       
+
+        <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.12.3.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/dataTables.jqueryui.min.js"></script>
 "@
 
 
 
 
-function CreateDataTableAsHtmlString($data,$tablename, $property)
+function CreateDataTableAsHtmlString
 {
+    [CmdletBinding()]
+    param(
+        $Data,
+        [string]$TableName,
+        $Property)
+
+
        $preContent =
 @"
-<table id="$tablename" class="display" cellspacing="0" width="100%">
+<table id="$TableName" class="display" cellspacing="0" width="100%">
         <thead>
             <tr>
                 KLX
@@ -32,13 +67,17 @@ function CreateDataTableAsHtmlString($data,$tablename, $property)
 <script>
     `$(document).ready(function()
     {
-        `$('#$tablename').dataTable( { "sPaginationType": "full_numbers" } );
+        `$('#$TableName').dataTable( { 
+            "sPaginationType": "full_numbers", 
+            "jQueryUI": true,
+            "lengthMenu" : [ [25, 50, 100, -1], [25, 50, 100, "All"] ]
+         });
     });
 </script>
 "@;
 
 
-     $htmlData = $data | ConvertTo-Html -PreContent $preContent -PostContent $postContent -Fragment -Property $property
+     $htmlData = $Data | ConvertTo-Html -PreContent $preContent -PostContent $postContent -Fragment -Property $Property
 
      # html magic's
      #supress colgroup 
@@ -70,20 +109,26 @@ function CreateDataTableAsHtmlString($data,$tablename, $property)
 
 
 
-function BuildHtmlHeadForTable($title, $dataTable)
+function BuildHtmlForTable
 {
+    [CmdletBinding()]
+    param(
+        [string]$Title,
+        [string]$DataTable)
+
+
 $htmlDoc = @"
 <!DOCTYPE html PUBLIC "-//IETF//DTD HTML 2.0//EN">
 <HTML>
     <HEAD>
         <meta charset="UTF-8">
         <TITLE>
-           $title
+           $Title
         </TITLE>
         $htmlHead
     </HEAD>
     <BODY>
-        $dataTable
+        $DataTable
     </BODY>
 </HTML>
 "@
@@ -93,18 +138,33 @@ $htmlDoc = @"
 
 
 
+
+
+
+
+# EXAMPLE 
+
 # -Properties arguement is passed as an array 
-$pros = @("Name",",","CPU")
+$property = @("Name",",","CPU", ",", "Path", ",", "Id")  # for all property simply pass "*" 
+
 # The HtmlTable Name
 $name = "myTable"
+
 # The dataSource
-$datax0 = Get-Process
+$data = Get-Process
+
+
+
+
+
+
+
 
 # Build the html table
-$htmlTable = CreateDataTableAsHtmlString $datax0 $name $pros 
+$htmlTable = CreateDataTableAsHtmlString -Data $data -TableName $name -Property $property
 
 # Create the html document
-$htmlDoc = BuildHtmlHeadForTable "Example" $htmlTable
+$htmlDoc = BuildHtmlForTable -Title "Process report" -DataTable $htmlTable
 
 
 
