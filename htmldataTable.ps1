@@ -1,6 +1,6 @@
 # Enhancing ConvertTo-html cmdlet with HTMLDataTable 
 # using jquery and css from CDN but can be hosted locally . 
-# und3ath 06/07/2016
+# und3ath 08/07/2016
 
 
 $jqueryUiTheme = @{
@@ -25,150 +25,150 @@ $jqueryUiTheme = @{
 
 
 
-
-
-
-$htmlHead = @"
-        <link rel="stylesheet" type="text/css" charset="utf8" href="$($jqueryUiTheme["vader"])"> 
-        <link rel="stylesheet" type="text/css" charset="utf8" href="https://cdn.datatables.net/1.10.12/css/dataTables.jqueryui.css"> 
-       
-
-        <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.12.3.js"></script>
-        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
-        <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/dataTables.jqueryui.min.js"></script>
-"@
-
-
-
-
-function CreateDataTableAsHtmlString
+Function Convertto-DataTable
 {
     [CmdletBinding()]
-    param(
-        $Data,
-        [string]$TableName,
-        $Property)
-
-
-       $preContent =
-@"
-<table id="$TableName" class="display" cellspacing="0" width="100%">
-        <thead>
-            <tr>
-                KLX
-            </tr>
-        </thead> 
-        <tbody>
-"@
-
-
-    $postContent = 
-@"
-<script>
-    `$(document).ready(function()
-    {
-        `$('#$TableName').dataTable( { 
-            "sPaginationType": "full_numbers", 
-            "jQueryUI": true,
-            "lengthMenu" : [ [25, 50, 100, -1], [25, 50, 100, "All"] ]
-         });
-    });
-</script>
-"@;
-
-
-     $htmlData = $Data | ConvertTo-Html -PreContent $preContent -PostContent $postContent -Fragment -Property $Property
-
-     # html magic's
-     #supress colgroup 
-     $htmlData = [regex]::Replace($htmlData, "<colgroup>.*</colgroup>", "")
-
-     $property = [regex]::Match($htmlData, "<tr><th>.*</th></tr>")
-
-     #supress column desc
-     $htmlData = [regex]::Replace($htmlData, "<tr><th>.*</th></tr>", "")
-
-     $property = $property -replace "<tr><th>", ""
-     $property = $property -replace "</th></tr>", ""
-     $propertyArray = $property -split "</th><th>"
-     $propFormated = ""
-     foreach($props in $propertyArray)
-     {
-        $p = ("`t`t`t<th>{0}</th>`n" -f $props)
-        $propFormated += $p
-     }
-     $htmlData = $htmlData -replace "KLX", $propFormated
-     $htmlData = $htmlData -replace "<table>" , ""
-     $htmlData = $htmlData -replace "</table>", "`n</tbody>`n</table>`n"
-     $htmlData = $htmlData -replace "</body>", ""
-     $htmlData = $htmlData -replace "<body>", ""
-
-     return $htmlData
-
-}
-
-
-
-function BuildHtmlForTable
-{
-    [CmdletBinding()]
-    param(
+    Param(
+        [parameter(Mandatory=$true,
+        ValueFromPipeline=$true,
+        ValueFromPipelineByPropertyName=$true)]
+        [psobject[]]$InputObject,
+        [string[]]$Head,
         [string]$Title,
-        [string]$DataTable)
+        [object[]]$Property,
+        [string[]]$PreContent,
+        [string[]]$PostContent,
+        [string]$JqueryUi="vader"    
+    )
 
 
-$htmlDoc = @"
-<!DOCTYPE html PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<HTML>
-    <HEAD>
-        <meta charset="UTF-8">
-        <TITLE>
-           $Title
-        </TITLE>
-        $htmlHead
-    </HEAD>
-    <BODY>
-        $DataTable
-    </BODY>
-</HTML>
+    $htmlDoc = "<!DOCTYPE html PUBLIC \`"-//W3C//DTD XHTML 1.0 Strict//EN\`"  \`"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\`">`n"
+    $htmlDoc += "<html xmlns=\`"http://www.w3.org/1999/xhtml\`">`n"
+    $htmlDoc += "`t<head>`n"
+
+    if($Title -ne [string]::Empty) {
+        $htmlDoc += ("`t`t<title>{0}</title>`n" -f $Title)
+    }
+    else {
+        $htmlDoc += "`t`t<title> HTML TABLE </title>`n"
+    }
+
+
+    if($Head -ne $null) {
+        foreach($s in $Head) {
+            $htmlDoc += $s
+        }
+    }
+
+
+
+    $htmlDoc += @"
+    `t<link rel="stylesheet" type="text/css" charset="utf8" href="$($jqueryUiTheme[$JqueryUi])"> 
+    `t<link rel="stylesheet" type="text/css" charset="utf8" href="https://cdn.datatables.net/1.10.12/css/dataTables.jqueryui.css">
+    `t<script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-1.12.3.js"></script>
+    `t<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
+    `t<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/dataTables.jqueryui.min.js"></script>`n
 "@
+    $htmlDoc += "`t</head>`n"
+
+
+
+
+    $htmlDoc += "`t<body>`n"
+    if($PreContent -ne $null) {
+        foreach($t in $PreContent) {
+            $htmlDoc += $t
+        }
+    }
+
+
+    $htmlDoc += "`t`t<table id=`"myTable`" class=`"display`" cellspacing=`"0`" width=`"100%`">`n"
+
+    
+    # Get The properties for table head
+    $properties = $InputObject | Get-Member -MemberType Properties
+    $htmlDoc += "`t`t`t<thead>`n"
+    $htmlDoc += "`t`t`t`t<tr>`n"
+    foreach($prop in $properties) {
+        if($Property -eq "*") {
+            $htmlDoc += ("`t`t`t`t`t<th>{0}</th>`n" -f $prop.Name)
+        }
+        else {
+            foreach($o in $Property) {
+                if($o -eq $prop.Name) {
+                     $htmlDoc += ("`t`t`t`t`t<th>{0}</th>`n" -f $prop.Name)
+                }
+            }
+        }
+    }
+    $htmlDoc += "`t`t`t`t</tr>`n"
+    $htmlDoc += "`t`t`t</thead>`n"
+
+
+
+    # Create the table body
+    $htmlDoc += "`t`t`t<tbody>`n"   
+    foreach($input in $InputObject) {
+        $htmlDoc += "`t`t`t`t<tr>"
+        foreach($prop in $properties) {
+            if($Property -eq "*") {
+                $value = $input.($prop.Name)
+                $htmlDoc += ("<td>{0}</td>" -f $value)
+            }
+            else {
+                foreach($o in $Property) {
+                    if($o -eq $prop.Name) {
+                        $value = $input.($prop.Name)
+                        $htmlDoc += ("<td>{0}</td>" -f $value)
+                    }
+                }
+            }
+        }
+        $htmlDoc += "</tr>`n"
+    }   
+    $htmlDoc += "`t`t`t</tbody>`n"
+    $htmlDoc += "`t`t</table>`n"
+
+
+
+
+    $htmlDoc += @"
+     <script>
+        `$(document).ready(function()
+        {
+            `$('#myTable').dataTable( { 
+                "sPaginationType": "full_numbers", 
+                "jQueryUI": true,
+                "lengthMenu" : [ [25, 50, 100, -1], [25, 50, 100, "All"] ]
+            });
+        });
+    </script>`n
+"@
+
+    if($PostContent -ne $null) {
+        foreach($t in $PostContent) {
+            $htmlDoc += $t
+        }
+    }
+
+    $htmlDoc += "`t</body>`n"
+    $htmlDoc += "</html>"
 
     return $htmlDoc
 }
 
 
 
+#Example Usage
 
+$processes = Get-Process
 
+# default value
+$result = ,$processes | Convertto-DataTable 
+# with additional info and jqueryUi Theme
+$result = ,$processes | Convertto-DataTable -Title "Table Jquery" -Property * -PreContent "<H1>Pre Content</H1>" -PostContent "<H1>Post Content</H1>" -JqueryUi "smoothness"
+# without piping 
+$result = Convertto-DataTable -InputObject $processes
+# Filtering property
+$result = ,$processes | Convertto-DataTable -Property Name,CPU,Path
 
-
-# EXAMPLE 
-
-# -Properties arguement is passed as an array 
-$property = @("Name",",","CPU", ",", "Path", ",", "Id")  # for all property simply pass "*" 
-
-# The HtmlTable Name
-$name = "myTable"
-
-# The dataSource
-$data = Get-Process
-
-
-
-
-
-
-
-
-# Build the html table
-$htmlTable = CreateDataTableAsHtmlString -Data $data -TableName $name -Property $property
-
-# Create the html document
-$htmlDoc = BuildHtmlForTable -Title "Process report" -DataTable $htmlTable
-
-
-
-#outputing
-
-$htmlDoc | Out-File C:\tmp.html
-Invoke-Expression C:\tmp.html
