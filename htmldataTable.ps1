@@ -1,6 +1,6 @@
 # Enhancing ConvertTo-html cmdlet with HTMLDataTable 
 # using jquery and css from CDN but can be hosted locally . 
-# und3ath 08/07/2016
+# und3ath 06/07/2016
 
 
 $jqueryUiTheme = @{
@@ -34,8 +34,8 @@ Function Convertto-DataTable
         ValueFromPipelineByPropertyName=$true)]
         [psobject[]]$InputObject,
         [string[]]$Head,
-        [string]$Title,
-        [object[]]$Property,
+        [string]$Title="HTML TABLE",
+        [object[]]$Property="*",
         [string[]]$PreContent,
         [string[]]$PostContent,
         [string]$JqueryUi="vader"    
@@ -46,12 +46,8 @@ Function Convertto-DataTable
     $htmlDoc += "<html xmlns=\`"http://www.w3.org/1999/xhtml\`">`n"
     $htmlDoc += "`t<head>`n"
 
-    if($Title -ne [string]::Empty) {
-        $htmlDoc += ("`t`t<title>{0}</title>`n" -f $Title)
-    }
-    else {
-        $htmlDoc += "`t`t<title> HTML TABLE </title>`n"
-    }
+    #Title Document
+    $htmlDoc += ("`t`t<title>{0}</title>`n" -f $Title)
 
 
     if($Head -ne $null) {
@@ -160,15 +156,21 @@ Function Convertto-DataTable
 
 
 #Example Usage
+# using the ',' befor object array (unarray operator) when piping the command due to the powershell (ne needed for native dll cmdlet writted in c#) 
 
 $processes = Get-Process
 
 # default value
-$result = ,$processes | Convertto-DataTable 
+$result0 = ,$processes | Convertto-DataTable 
 # with additional info and jqueryUi Theme
-$result = ,$processes | Convertto-DataTable -Title "Table Jquery" -Property * -PreContent "<H1>Pre Content</H1>" -PostContent "<H1>Post Content</H1>" -JqueryUi "smoothness"
+$result1 = ,$processes | Convertto-DataTable -Title "Table Jquery" -Property * -PreContent "<H1>Pre Content</H1>" -PostContent "<H1>Post Content</H1>" -JqueryUi "smoothness"
 # without piping 
-$result = Convertto-DataTable -InputObject $processes
+$result2 = Convertto-DataTable -InputObject $processes
 # Filtering property
-$result = ,$processes | Convertto-DataTable -Property Name,CPU,Path
+$result3 = ,$processes | Convertto-DataTable -Property Name,CPU,Path
 
+
+
+#
+$result0 | Out-File C:\test.html
+Invoke-Expression C:\test.html
