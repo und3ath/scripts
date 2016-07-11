@@ -24,21 +24,61 @@ $jqueryUiTheme = @{
 }
 
 
+$adv_featuresJS = @"
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.2.1/js/dataTables.buttons.min.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdnjs.cloudflare.com/ajax/libs/jszip/2.5.0/jszip.min.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/pdfmake.min.js"></script>		
+		<script type="text/javascript" charset="utf8" src="https://cdn.rawgit.com/bpampuch/pdfmake/0.1.18/build/vfs_fonts.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.2.1/js/buttons.html5.min.js"></script>
+		<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/buttons/1.2.1/js/buttons.colVis.min.js"></script>
+"@
+
+$adv_featuresCSS = @"
+        <link rel="stylesheet" type="text/css" charset="utf8" href="https://cdn.datatables.net/buttons/1.2.1/css/buttons.dataTables.min.css">
+"@
+
+
+$adv_featuresJavascriptInit = @"
+,
+				dom: 'Bfrtip',
+				buttons: [
+				{
+					extend: 'copyHtml5',
+					exportOptions: {
+						columns: [ 0, ':visible' ]
+					}
+				},
+				{
+					extend: 'excelHtml5',
+					exportOptions: {
+						columns: ':visible'
+					}
+				},
+				{
+					extend: 'pdfHtml5',
+					exportOptions: {
+						columns: [ 0, 1, 2, 5 ]
+					}
+				},
+				'colvis'
+			]
+"@
+
 
 Function Convertto-DataTable
 {
     [CmdletBinding()]
     Param(
-        [parameter(Mandatory=$true,
-        ValueFromPipeline=$true,
-        ValueFromPipelineByPropertyName=$true)]
+        [parameter(Mandatory=$true, ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
         [psobject[]]$InputObject,
         [string[]]$Head,
         [string]$Title="HTML TABLE",
         [object[]]$Property="*",
         [string[]]$PreContent,
         [string[]]$PostContent,
-        [string]$JqueryUi="vader"    
+        [string]$JqueryUi="vader",
+        [switch]$AdvFeatures
+                  
     )
 
 
@@ -65,9 +105,16 @@ Function Convertto-DataTable
     `t<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/jquery.dataTables.min.js"></script>
     `t<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.12/js/dataTables.jqueryui.min.js"></script>`n
 "@
+
+    if($AdvFeatures)
+    {
+        $htmlDoc += $adv_featuresCSS
+        $htmlDoc += $adv_featuresJS
+    }
+
     $htmlDoc += "`t</head>`n"
 
-
+    
 
 
     $htmlDoc += "`t<body>`n"
@@ -127,8 +174,9 @@ Function Convertto-DataTable
 
 
 
-
-    $htmlDoc += @"
+    if(-not $AdvFeatures)
+    {
+        $htmlDoc += @"
      <script>
         `$(document).ready(function()
         {
@@ -140,6 +188,25 @@ Function Convertto-DataTable
         });
     </script>`n
 "@
+    }
+    else
+    {
+        $htmlDoc += @"
+     <script>
+        `$(document).ready(function()
+        {
+            `$('#myTable').dataTable( { 
+                "sPaginationType": "full_numbers", 
+                "jQueryUI": true,
+                "lengthMenu" : [ [25, 50, 100, -1], [25, 50, 100, "All"] ] _KLM_
+            });
+        });
+    </script>`n
+"@
+
+        $htmlDoc = $htmlDoc -replace "_KLM_", $adv_featuresJavascriptInit
+    }
+
 
     if($PostContent -ne $null) {
         foreach($t in $PostContent) {
@@ -150,27 +217,8 @@ Function Convertto-DataTable
     $htmlDoc += "`t</body>`n"
     $htmlDoc += "</html>"
 
+
+
+
     return $htmlDoc
 }
-
-
-
-#Example Usage
-# using the ',' befor object array (unarray operator) when piping the command due to the powershell (ne needed for native dll cmdlet writted in c#) 
-
-$processes = Get-Process
-
-# default value
-$result0 = ,$processes | Convertto-DataTable 
-# with additional info and jqueryUi Theme
-$result1 = ,$processes | Convertto-DataTable -Title "Table Jquery" -Property * -PreContent "<H1>Pre Content</H1>" -PostContent "<H1>Post Content</H1>" -JqueryUi "smoothness"
-# without piping 
-$result2 = Convertto-DataTable -InputObject $processes
-# Filtering property
-$result3 = ,$processes | Convertto-DataTable -Property Name,CPU,Path
-
-
-
-#
-$result0 | Out-File C:\test.html
-Invoke-Expression C:\test.html
