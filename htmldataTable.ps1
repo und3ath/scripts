@@ -169,22 +169,8 @@ Function Convertto-DataTable
     $htmlDoc += "`t`t`t</tbody>`n"
     $htmlDoc += "`t`t</table>`n"
 
-    if(-not $AdvFeatures) {
-        $htmlDoc += @"
-     <script>
-        `$(document).ready(function()
-        {
-            `$('#myTable').dataTable( { 
-                "sPaginationType": "full_numbers", 
-                "jQueryUI": true,
-                "lengthMenu" : [ [25, 50, 100, -1], [25, 50, 100, "All"] ]
-            });
-        });
-    </script>`n
-"@
-    }
-    else {
-        $htmlDoc += @"
+
+     $htmlDoc += @"
      <script>
         `$(document).ready(function()
         {
@@ -196,6 +182,12 @@ Function Convertto-DataTable
         });
     </script>`n
 "@
+
+
+    if(-not $AdvFeatures) {
+        $htmlDoc = $htmlDoc -replace "_KLM_", ""
+    }
+    else {   
 
         $htmlDoc = $htmlDoc -replace "_KLM_", $adv_featuresJavascriptInit
     }
